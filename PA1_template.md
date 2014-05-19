@@ -58,76 +58,131 @@ so you do not have to download the data separately.
 Show any code that is needed to
 
 Load the data (i.e. read.csv())
-```{r load-data}
+
+```r
 activity_df <- read.csv(file = "activity.csv", header = TRUE)
 require(testthat, quietly = TRUE)
 expect_equal(nrow(activity_df), 17568)
 names(activity_df)
+```
+
+```
+## [1] "steps"    "date"     "interval"
+```
+
+```r
 str(activity_df)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
+
+```r
 require(lubridate, quietly = TRUE)
 activity_df$date <- ymd(activity_df$date)
 min_date <- min(activity_df$date)
-activity_df$day <- (activity_df$date - min_date) / (24 * 60 * 60)
+activity_df$day <- (activity_df$date - min_date)/(24 * 60 * 60)
 str(activity_df)
+```
 
 ```
+## 'data.frame':	17568 obs. of  4 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : POSIXct, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+##  $ day     :Class 'difftime'  atomic [1:17568] 0 0 0 0 0 0 0 0 0 0 ...
+##   .. ..- attr(*, "tzone")= chr "UTC"
+##   .. ..- attr(*, "units")= chr "secs"
+```
+
 
 Process/transform the data (if necessary) into a format suitable for your analysis
 
 #### What is mean total number of steps taken per day?
 For this part of the assignment, you can ignore the missing values in the dataset.
 
-````{r mean-total-number-of-steps-per-day}
-steps_per_day <- sapply(min(activity_df$day):max(activity_df$day), 
-                       function(day) {sum(activity_df$steps[activity_df$day == day])})
-steps_df <- data.frame(day = min(activity_df$day):max(activity_df$day),
-                       steps = steps_per_day)
+
+```r
+steps_per_day <- sapply(min(activity_df$day):max(activity_df$day), function(day) {
+    sum(activity_df$steps[activity_df$day == day])
+})
+steps_df <- data.frame(day = min(activity_df$day):max(activity_df$day), steps = steps_per_day)
 mean(steps_df$steps, na.rm = TRUE)
 ```
-1. Make a histogram of the total number of steps taken each day
-```{r histogram-of-total-steps-each-day}
-hist(steps_df$steps, xlab = "Total number of steps per day", 
-     main = "Histogram of Step Per Day")
+
 ```
+## [1] 10766
+```
+
+1. Make a histogram of the total number of steps taken each day
+
+```r
+hist(steps_df$steps, xlab = "Total number of steps per day", main = "Histogram of Step Per Day")
+```
+
+![plot of chunk histogram-of-total-steps-each-day](figure/histogram-of-total-steps-each-day.png) 
+
 2. Calculate and report the mean and median total number of steps taken per day
-```{r mean-and-median-number-of-steps}
+
+```r
 mean_number_of_steps <- round(mean(steps_per_day, na.rm = TRUE), 1)
 median_number_of_steps <- round(median(steps_per_day, na.rm = TRUE), 1)
 ```
 
+
 The mean number of steps per day is 
-`r round(mean(steps_per_day, na.rm = TRUE), 1)` and
+1.0766 &times; 10<sup>4</sup> and
 the median total number of steps per days is 
-`r round(median(steps_per_day, na.rm = TRUE), 1)`.
+1.0765 &times; 10<sup>4</sup>.
 
 
 #### What is the average daily activity pattern?
 
 Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) 
 and the average number of steps taken, averaged across all days (y-axis)
-```{r time-series-plot}
+
+```r
 activity_ts <- ts(activity_df)
 plot.ts(activity_df$interval, activity_df$steps, type = "l")
 ```
+
+![plot of chunk time-series-plot](figure/time-series-plot.png) 
+
 Which 5-minute interval, on average across all the days in the dataset, 
 contains the maximum number of steps?
-```{r maximum-number-of-steps-day}
+
+```r
 max_steps <- 0
 max_step_interval <- 0
 intervals <- sort(unique(activity_df$interval))
 for (interval in intervals) {
-  steps <- mean(activity_df$steps[activity_df$interval == interval], 
-                na.rm = TRUE)
-  if (steps > max_steps) {
-    max_steps <- steps
-    max_step_interval <- interval
-  }
+    steps <- mean(activity_df$steps[activity_df$interval == interval], na.rm = TRUE)
+    if (steps > max_steps) {
+        max_steps <- steps
+        max_step_interval <- interval
+    }
 }
 max_step_interval
+```
+
+```
+## [1] 835
+```
+
+```r
 max_steps
 ```
+
+```
+## [1] 206.2
+```
+
 The the highest average (mean) number of steps over all days is 
-`r max_steps` that occurs in interval `r max_step_interval`.
+206.1698 that occurs in interval 835.
 
 #### Imputing missing values
 
@@ -137,42 +192,49 @@ calculations or summaries of the data.
 
 1. Calculate and report the total number of missing values in the dataset 
 (i.e. the total number of rows with NAs)
-```{r total-number-of-missing-values}
+
+```r
 all_rows <- nrow(activity_df)
 complete_rows <- nrow(activity_df[complete.cases(activity_df), ])
 rows_with_NAs <- all_rows - complete_rows
 rows_with_NAs
 ```
-There are `r rows_with_NAs` rows with NAs.
+
+```
+## [1] 2304
+```
+
+There are 2304 rows with NAs.
 
 2. Devise a strategy for filling in all of the missing values in the dataset. 
 The strategy does not need to be sophisticated. For example, you could use the 
 mean/median for that day, or the mean for that 5-minute interval, etc.
-```{r missing-value-strategy}
+
+```r
 intervals <- sort(unique(activity_df$interval))
 num_intervals <- length(intervals)
 means_of_intervals <- numeric(num_intervals)
 i <- 0
 for (interval in intervals) {
-  steps <- mean(activity_df$steps[activity_df$interval == interval], 
-                na.rm = TRUE)
-  i <- i + 1
-  means_of_intervals[i] <- steps
+    steps <- mean(activity_df$steps[activity_df$interval == interval], na.rm = TRUE)
+    i <- i + 1
+    means_of_intervals[i] <- steps
 }
 ```
+
 means_of_intervals has values to be used to replace NAs
 
 2. Create a new dataset that is equal to the original dataset but with the 
 missing data filled in.
-```{r replacement-of-NAs}
-#for (interval in intervals) {
-#  for (step in seq_along(activity_df$steps[activity_df$interval == interval]))
-#    if (is.na(activity_df$step[activity_df$interval == interval][step])) {
-#      activity_df$step[activity_df$interval == interval][step] <- 
-#        means_of_intervals[interval]
-#      }
-##}
+
+```r
+# for (interval in intervals) { for (step in
+# seq_along(activity_df$steps[activity_df$interval == interval])) if
+# (is.na(activity_df$step[activity_df$interval == interval][step])) {
+# activity_df$step[activity_df$interval == interval][step] <-
+# means_of_intervals[interval] } }
 ```
+
 4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 #### Are there differences in activity patterns between weekdays and weekends?
